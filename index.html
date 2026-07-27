@@ -799,9 +799,7 @@
         var d = new Date();
         setChip('on', (rtReady ? '실시간 · ' : '') + '동기화됨 ' +
           String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'));
-        if (notify && rtChannel && rtReady) {
-          rtChannel.send({ type: 'broadcast', event: 'sync', payload: {} });
-        }
+        if (notify) broadcastSync();
       })
       .catch(function () { setChip('err', '연결 안 됨'); })
       .then(function () {
@@ -810,23 +808,44 @@
       });
   }
 
-  function setupRealtime() {
-    if (!syncId || rtChannel || !window.supabase) return;
+  // 웹소켓 없이도 동작하는 HTTP 방송 — 내 연결이 끊겨 있어도 상대에겐 전달됨
+  function broadcastSync() {
+    if (!syncId) return;
+    fetch(SUPABASE_URL + '/realtime/v1/api/broadcast', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: SUPABASE_KEY,
+        Authorization: 'Bearer ' + SUPABASE_KEY
+      },
+      body: JSON.stringify({ messages: [{ topic: 'le-' + syncId, event: 'sync', payload: {}, private: false }] })
+    }).catch(function () {});
+  }
+
+  var sbClient = null;
+  // 모바일은 화면이 꺼지면 웹소켓이 끊기므로, 돌아올 때마다 상태를 보고 재구독
+  function ensureRealtime() {
+    if (!syncId || !window.supabase) return;
     try {
-      var client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-      rtChannel = client.channel('le-' + syncId);
+      if (!sbClient) sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      if (rtChannel && (rtChannel.state === 'joined' || rtChannel.state === 'joining')) return;
+      if (rtChannel) { try { sbClient.removeChannel(rtChannel); } catch (e) {} }
+      rtReady = false;
+      rtChannel = sbClient.channel('le-' + syncId);
       rtChannel.on('broadcast', { event: 'sync' }, function () { syncNow(false); });
       rtChannel.subscribe(function (status) {
         rtReady = (status === 'SUBSCRIBED');
+        if (rtReady) syncNow(false); // 재연결 직후 밀린 변경 즉시 반영
       });
     } catch (e) { rtChannel = null; }
   }
 
-  setInterval(function () { syncNow(false); }, 60000);
+  setInterval(function () { ensureRealtime(); syncNow(false); }, 20000);
   document.addEventListener('visibilitychange', function () {
-    if (!document.hidden) syncNow(false);
+    if (!document.hidden) { ensureRealtime(); syncNow(false); }
   });
-  window.addEventListener('online', function () { syncNow(false); });
+  window.addEventListener('online', function () { ensureRealtime(); syncNow(false); });
+  window.addEventListener('pageshow', function () { ensureRealtime(); syncNow(false); });
 
   /* ----- 월별 그래프 ----- */
   var SVG_NS = 'http://www.w3.org/2000/svg';
@@ -1108,6 +1127,6 @@
   renderHistory();
   drawChart();
   maybeFillForm();
-  setupRealtime();
+  ensureRealtime();
   syncNow(false);
 </script>

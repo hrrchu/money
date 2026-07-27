@@ -486,7 +486,7 @@
       <h2>정산 입력</h2>
     </div>
     <div class="card" id="inputCard">
-      <div class="group-label">내 수입</div>
+      <div class="group-label">희진 정산</div>
       <div class="row">
         <span class="sign plus" aria-hidden="true">+</span>
         <span class="name">월급</span>
@@ -520,6 +520,11 @@
       </div>
       <div class="row">
         <span class="sign minus" aria-hidden="true">−</span>
+        <span class="name">용돈</span>
+        <span class="amount-box"><input id="f_pocket_me" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="희진 용돈"><span class="won">원</span></span>
+      </div>
+      <div class="row">
+        <span class="sign minus" aria-hidden="true">−</span>
         <span class="name">기타비용</span>
         <span class="amount-box"><input id="f_etc_me" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="내 기타비용"><span class="won">원</span></span>
       </div>
@@ -539,6 +544,11 @@
         <span class="sign minus" aria-hidden="true">−</span>
         <span class="name">스타필드카드</span>
         <span class="amount-box"><input id="f_starfield" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="스타필드카드"><span class="won">원</span></span>
+      </div>
+      <div class="row">
+        <span class="sign minus" aria-hidden="true">−</span>
+        <span class="name">용돈</span>
+        <span class="amount-box"><input id="f_pocket_hb" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="남편 용돈"><span class="won">원</span></span>
       </div>
       <div class="row">
         <span class="sign minus" aria-hidden="true">−</span>
@@ -573,11 +583,13 @@
     { id: 'f_starfield', label: '스타필드카드', sign: -1, side: 'hb', spend: true },
     { id: 'f_etc',       label: '기타비용',     sign: -1, side: 'hb', spend: true },
     // 저장 데이터(v 배열)가 위치 기반이라 새 항목은 반드시 맨 뒤에 추가
-    { id: 'f_etc_me',    label: '기타비용',     sign: -1, side: 'me', spend: true }
+    { id: 'f_etc_me',    label: '기타비용',     sign: -1, side: 'me', spend: true },
+    { id: 'f_pocket_me', label: '용돈',         sign: -1, side: 'me', spend: true },
+    { id: 'f_pocket_hb', label: '용돈',         sign: -1, side: 'hb', spend: true }
   ];
   // 요약 텍스트에 표시할 순서 (화면 배치와 동일하게)
   var SUMMARY_ORDER = ['f_salary', 'f_loan', 'f_borrow', 'f_shinhan', 'f_coupang', 'f_hana',
-    'f_etc_me', 'f_heejin', 'f_husband', 'f_starfield', 'f_etc'];
+    'f_pocket_me', 'f_etc_me', 'f_heejin', 'f_husband', 'f_starfield', 'f_pocket_hb', 'f_etc'];
   var LS_KEY = 'living-expenses-history-v1';
   var SYNC_LS_KEY = 'living-expenses-sync-id';
   var SUPABASE_URL = 'https://pbfgebrbvnemvragtoeh.supabase.co';

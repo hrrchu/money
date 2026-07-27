@@ -1,0 +1,1055 @@
+<title>생활비 정산</title>
+<style>
+  :root {
+    --bg: #F3F6FB;
+    --surface: #FFFFFF;
+    --surface-2: #EAF0F9;
+    --ink: #1F2937;
+    --muted: #64748B;
+    --line: #DCE4F0;
+    --accent: #2563EB;
+    --accent-ink: #FFFFFF;
+    --minus: #C05B52;
+    --plus: #2563EB;
+    --result-bg: #1E48C8;
+    --result-ink: #F2F6FE;
+    --result-sub: #A7C0F5;
+    --chart-collect: #2a78d6;
+    --chart-spend: #eb6834;
+    --shadow: 0 1px 3px rgba(23, 37, 84, .08), 0 8px 24px rgba(23, 37, 84, .06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0F1522;
+      --surface: #171F2E;
+      --surface-2: #1F2A3E;
+      --ink: #E3EAF6;
+      --muted: #8FA0B8;
+      --line: #293650;
+      --accent: #5B9BF5;
+      --accent-ink: #0C1524;
+      --minus: #E08A80;
+      --plus: #6FA8F7;
+      --result-bg: #1E3A78;
+      --result-ink: #EAF1FD;
+      --result-sub: #9CB9EE;
+      --chart-collect: #3987e5;
+      --chart-spend: #d95926;
+      --shadow: 0 1px 3px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #F3F6FB;
+    --surface: #FFFFFF;
+    --surface-2: #EAF0F9;
+    --ink: #1F2937;
+    --muted: #64748B;
+    --line: #DCE4F0;
+    --accent: #2563EB;
+    --accent-ink: #FFFFFF;
+    --minus: #C05B52;
+    --plus: #2563EB;
+    --result-bg: #1E48C8;
+    --result-ink: #F2F6FE;
+    --result-sub: #A7C0F5;
+    --chart-collect: #2a78d6;
+    --chart-spend: #eb6834;
+    --shadow: 0 1px 3px rgba(23, 37, 84, .08), 0 8px 24px rgba(23, 37, 84, .06);
+  }
+  :root[data-theme="dark"] {
+    --bg: #0F1522;
+    --surface: #171F2E;
+    --surface-2: #1F2A3E;
+    --ink: #E3EAF6;
+    --muted: #8FA0B8;
+    --line: #293650;
+    --accent: #5B9BF5;
+    --accent-ink: #0C1524;
+    --minus: #E08A80;
+    --plus: #6FA8F7;
+    --result-bg: #1E3A78;
+    --result-ink: #EAF1FD;
+    --result-sub: #9CB9EE;
+    --chart-collect: #3987e5;
+    --chart-spend: #d95926;
+    --shadow: 0 1px 3px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Pretendard Variable", Pretendard, "Noto Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 34rem;
+    margin: 0 auto;
+    padding: 1.5rem 1rem 4rem;
+  }
+
+  header { margin-bottom: 1.25rem; }
+  .eyebrow {
+    font-size: .75rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+  h1 {
+    margin: .15rem 0 0;
+    font-size: 1.55rem;
+    font-weight: 800;
+    letter-spacing: -.01em;
+    text-wrap: balance;
+  }
+  .month-row {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    margin-top: .85rem;
+  }
+  .month-row label { font-size: .85rem; color: var(--muted); font-weight: 600; }
+  input[type="month"] {
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+    border-radius: .5rem;
+    padding: .4rem .6rem;
+    font: inherit;
+    font-weight: 700;
+  }
+  .sync-chip {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    font-size: .75rem;
+    font-weight: 700;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: .25rem .65rem;
+    white-space: nowrap;
+  }
+  .sync-chip .dot {
+    width: .5rem;
+    height: .5rem;
+    border-radius: 50%;
+    background: var(--muted);
+    flex: 0 0 auto;
+  }
+  .sync-chip.on .dot { background: var(--accent); }
+  .sync-chip.err .dot { background: var(--minus); }
+
+  .banner {
+    display: none;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--accent);
+    border-radius: .5rem;
+    padding: .65rem .85rem;
+    font-size: .85rem;
+    margin-bottom: 1rem;
+  }
+  .banner.show { display: block; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: .875rem;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  .group-label {
+    padding: .8rem 1rem .35rem;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    color: var(--muted);
+  }
+  .row {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    padding: .45rem 1rem;
+  }
+  .row + .row { border-top: 1px solid var(--line); }
+  .sign {
+    flex: 0 0 auto;
+    width: 1.35rem;
+    height: 1.35rem;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: .85rem;
+    font-weight: 800;
+    background: var(--surface-2);
+  }
+  .sign.plus { color: var(--plus); }
+  .sign.minus { color: var(--minus); }
+  .row .name {
+    flex: 1 1 auto;
+    font-size: .95rem;
+    font-weight: 600;
+  }
+  .amount-box {
+    flex: 0 1 11rem;
+    display: flex;
+    align-items: center;
+    gap: .3rem;
+  }
+  .amount-box input {
+    width: 100%;
+    border: 1px solid var(--line);
+    background: var(--bg);
+    color: var(--ink);
+    border-radius: .5rem;
+    padding: .5rem .6rem;
+    font: inherit;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+  .amount-box input:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+    border-color: var(--accent);
+  }
+  .won { font-size: .85rem; color: var(--muted); }
+
+  .result {
+    margin-top: 1rem;
+    background: var(--result-bg);
+    color: var(--result-ink);
+    border-radius: .875rem;
+    padding: 1.1rem 1.25rem 1.2rem;
+    box-shadow: var(--shadow);
+  }
+  .result .label {
+    font-size: .85rem;
+    font-weight: 700;
+    color: var(--result-sub);
+    letter-spacing: .05em;
+  }
+  .result .big {
+    font-size: 2.1rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.01em;
+    margin-top: .1rem;
+    word-break: keep-all;
+  }
+  .result .big.negative { color: #FFB9AE; }
+  .split {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: .7rem;
+    padding-top: .7rem;
+    border-top: 1px solid rgba(255, 255, 255, .15);
+    flex-wrap: wrap;
+  }
+  .split .part { min-width: 0; }
+  .split .part-label {
+    font-size: .75rem;
+    font-weight: 700;
+    color: var(--result-sub);
+  }
+  .split .part-amount {
+    font-size: 1.05rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+  .split .part-amount.negative { color: #FFB9AE; }
+
+  .actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: .5rem;
+    margin-top: .85rem;
+  }
+  @media (max-width: 26rem) {
+    .actions { grid-template-columns: 1fr; }
+  }
+  button {
+    font: inherit;
+    font-weight: 700;
+    border-radius: .625rem;
+    padding: .7rem .5rem;
+    cursor: pointer;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+    transition: filter .12s ease;
+  }
+  button:hover { filter: brightness(.97); }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+  }
+
+  section.block { margin-top: 2rem; }
+  .block-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: .6rem;
+  }
+  .block-head h2 { font-size: 1.05rem; font-weight: 800; margin: 0; }
+  .cumulative {
+    font-size: .85rem;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .cumulative strong { color: var(--accent); font-size: 1rem; }
+
+  /* ----- 차트 ----- */
+  .chart-card { padding: 1rem 1rem 1.1rem; position: relative; }
+  .legend {
+    display: flex;
+    gap: 1rem;
+    font-size: .8rem;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: .6rem;
+  }
+  .legend .key {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+  }
+  .legend .swatch {
+    width: .7rem;
+    height: .7rem;
+    border-radius: .2rem;
+    display: inline-block;
+  }
+  .legend .swatch.collect { background: var(--chart-collect); }
+  .legend .swatch.spend { background: var(--chart-spend); }
+  #chartHost { width: 100%; }
+  #chartHost svg { display: block; width: 100%; height: auto; }
+  .chart-note {
+    margin-top: .4rem;
+    font-size: .72rem;
+    color: var(--muted);
+  }
+  #chartTip {
+    position: absolute;
+    display: none;
+    background: var(--ink);
+    color: var(--bg);
+    border-radius: .5rem;
+    padding: .45rem .65rem;
+    font-size: .78rem;
+    line-height: 1.45;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 5;
+    font-variant-numeric: tabular-nums;
+  }
+  #chartTip .tt-month { font-weight: 800; }
+  .chart-empty {
+    padding: 1.4rem 1rem;
+    text-align: center;
+    color: var(--muted);
+    font-size: .88rem;
+  }
+
+  .history-list { display: flex; flex-direction: column; }
+  .history-item {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    padding: .65rem .9rem;
+  }
+  .history-item + .history-item { border-top: 1px solid var(--line); }
+  .history-item .hinfo { flex: 1; min-width: 0; }
+  .history-item .hmonth { font-weight: 700; font-size: .92rem; }
+  .history-item .hspent {
+    font-size: .75rem;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .history-item .hamount {
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    font-size: .95rem;
+  }
+  .history-item .hamount.neg { color: var(--minus); }
+  .history-item .mini {
+    flex: 0 0 auto;
+    padding: .3rem .55rem;
+    font-size: .78rem;
+    font-weight: 700;
+    border-radius: .45rem;
+  }
+  .empty {
+    padding: 1.2rem 1rem;
+    text-align: center;
+    color: var(--muted);
+    font-size: .88rem;
+  }
+  .hint {
+    margin-top: 1.5rem;
+    font-size: .8rem;
+    color: var(--muted);
+  }
+
+  #toast {
+    position: fixed;
+    left: 50%;
+    bottom: 1.5rem;
+    transform: translate(-50%, .5rem);
+    background: var(--ink);
+    color: var(--bg);
+    padding: .6rem 1rem;
+    border-radius: .625rem;
+    font-size: .88rem;
+    font-weight: 600;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .18s ease, transform .18s ease;
+    max-width: calc(100vw - 2rem);
+  }
+  #toast.show { opacity: 1; transform: translate(-50%, 0); }
+  @media (prefers-reduced-motion: reduce) {
+    #toast, button { transition: none; }
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">우리집 정산</div>
+    <h1>생활비 모으기 💰</h1>
+    <div class="month-row">
+      <label for="month">정산 월</label>
+      <input type="month" id="month">
+      <span class="sync-chip" id="syncChip"><span class="dot"></span><span id="syncChipText">동기화 꺼짐</span></span>
+    </div>
+  </header>
+
+  <div class="banner" id="sharedBanner">🔗 공유받은 정산 내역이에요. 아래에서 확인 후 <b>이번 달 저장</b>을 누르면 내 기록에도 남아요.</div>
+
+  <div class="card" id="inputCard">
+    <div class="group-label">내 수입</div>
+    <div class="row">
+      <span class="sign plus" aria-hidden="true">+</span>
+      <span class="name">월급</span>
+      <span class="amount-box"><input id="f_salary" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="월급"><span class="won">원</span></span>
+    </div>
+    <div class="group-label">빼는 돈</div>
+    <div class="row">
+      <span class="sign minus" aria-hidden="true">−</span>
+      <span class="name">대출이자</span>
+      <span class="amount-box"><input id="f_loan" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="대출이자"><span class="won">원</span></span>
+    </div>
+    <div class="row">
+      <span class="sign minus" aria-hidden="true">−</span>
+      <span class="name">차용이자</span>
+      <span class="amount-box"><input id="f_borrow" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="차용이자"><span class="won">원</span></span>
+    </div>
+    <div class="row">
+      <span class="sign minus" aria-hidden="true">−</span>
+      <span class="name">신한카드</span>
+      <span class="amount-box"><input id="f_shinhan" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="신한카드"><span class="won">원</span></span>
+    </div>
+    <div class="row">
+      <span class="sign minus" aria-hidden="true">−</span>
+      <span class="name">쿠팡카드</span>
+      <span class="amount-box"><input id="f_coupang" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="쿠팡카드"><span class="won">원</span></span>
+    </div>
+    <div class="row">
+      <span class="sign minus" aria-hidden="true">−</span>
+      <span class="name">하나카드</span>
+      <span class="amount-box"><input id="f_hana" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="하나카드"><span class="won">원</span></span>
+    </div>
+    <div class="group-label">다시 채우는 돈</div>
+    <div class="row">
+      <span class="sign plus" aria-hidden="true">+</span>
+      <span class="name">희진쓴돈</span>
+      <span class="amount-box"><input id="f_heejin" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="희진쓴돈"><span class="won">원</span></span>
+    </div>
+    <div class="group-label">남편 정산</div>
+    <div class="row">
+      <span class="sign plus" aria-hidden="true">+</span>
+      <span class="name">남편월급</span>
+      <span class="amount-box"><input id="f_husband" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="남편월급"><span class="won">원</span></span>
+    </div>
+    <div class="row">
+      <span class="sign minus" aria-hidden="true">−</span>
+      <span class="name">스타필드카드</span>
+      <span class="amount-box"><input id="f_starfield" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="스타필드카드"><span class="won">원</span></span>
+    </div>
+    <div class="row">
+      <span class="sign minus" aria-hidden="true">−</span>
+      <span class="name">기타비용</span>
+      <span class="amount-box"><input id="f_etc" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="기타비용"><span class="won">원</span></span>
+    </div>
+  </div>
+
+  <div class="result">
+    <div class="label">이번 달 모이는 돈</div>
+    <div class="big" id="resultBig">0원</div>
+    <div class="split">
+      <div class="part">
+        <div class="part-label">내가 주는 돈</div>
+        <div class="part-amount" id="myPart">0원</div>
+      </div>
+      <div class="part">
+        <div class="part-label">남편 몫 (남편월급 − 카드·기타)</div>
+        <div class="part-amount" id="husbandPart">0원</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="primary" id="btnSave">이번 달 저장</button>
+    <button id="btnShare">공유 링크 복사</button>
+    <button id="btnCopy">정산 내용 복사</button>
+  </div>
+
+  <section class="block">
+    <div class="block-head">
+      <h2>월별 그래프</h2>
+    </div>
+    <div class="card chart-card" id="chartCard">
+      <div class="legend" id="chartLegend">
+        <span class="key"><span class="swatch collect"></span>모인 돈</span>
+        <span class="key"><span class="swatch spend"></span>쓴 돈</span>
+      </div>
+      <div id="chartHost"></div>
+      <div class="chart-note" id="chartNote"></div>
+      <div class="chart-empty" id="chartEmpty">기록을 저장하면 다달이 모인 돈과 쓴 돈을 그래프로 볼 수 있어요 📊</div>
+      <div id="chartTip"></div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="block-head">
+      <h2>월별 기록</h2>
+      <div class="cumulative" id="cumulative"></div>
+    </div>
+    <div class="card">
+      <div class="history-list" id="historyList"></div>
+      <div class="empty" id="historyEmpty">아직 저장된 기록이 없어요. 금액을 입력하고 <b>이번 달 저장</b>을 눌러 보세요.</div>
+    </div>
+  </section>
+
+  <p class="hint">💡 <b>공유 링크 복사</b>로 만든 링크를 남편에게 한 번 보내주세요. 남편이 그 링크로 열면 같은 저장소에 연결돼서, 둘 중 누가 <b>이번 달 저장</b>을 눌러도 상대 화면에 <b>즉시</b> 반영돼요. 우측 상단 칩이 "실시간 · 동기화됨"이면 정상 연결 상태예요.</p>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  var FIELDS = [
+    { id: 'f_salary',    label: '월급',         sign: 1,  side: 'me' },
+    { id: 'f_loan',      label: '대출이자',     sign: -1, side: 'me', spend: true },
+    { id: 'f_borrow',    label: '차용이자',     sign: -1, side: 'me', spend: true },
+    { id: 'f_shinhan',   label: '신한카드',     sign: -1, side: 'me', spend: true },
+    { id: 'f_coupang',   label: '쿠팡카드',     sign: -1, side: 'me', spend: true },
+    { id: 'f_hana',      label: '하나카드',     sign: -1, side: 'me', spend: true },
+    { id: 'f_heejin',    label: '희진쓴돈',     sign: 1,  side: 'me' },
+    { id: 'f_husband',   label: '남편월급',     sign: 1,  side: 'hb' },
+    { id: 'f_starfield', label: '스타필드카드', sign: -1, side: 'hb', spend: true },
+    { id: 'f_etc',       label: '기타비용',     sign: -1, side: 'hb', spend: true }
+  ];
+  var LS_KEY = 'living-expenses-history-v1';
+  var SYNC_LS_KEY = 'living-expenses-sync-id';
+  var SUPABASE_URL = 'https://pbfgebrbvnemvragtoeh.supabase.co';
+  var SUPABASE_KEY = 'sb_publishable_LVTwJ2yLbCPpc_Gs5_kGWg_WqmkHi2U';
+
+  function $(id) { return document.getElementById(id); }
+  function fmt(n) { return n.toLocaleString('ko-KR'); }
+  function parseAmount(el) {
+    var digits = el.value.replace(/[^\d]/g, '');
+    return digits ? parseInt(digits, 10) : 0;
+  }
+  function monthLabel(m) {
+    var p = m.split('-');
+    return p.length === 2 ? (p[0] + '년 ' + parseInt(p[1], 10) + '월') : m;
+  }
+  function currentMonth() {
+    var d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  }
+  function padVals(v) {
+    var out = (v || []).slice(0, FIELDS.length);
+    while (out.length < FIELDS.length) out.push(0);
+    return out;
+  }
+
+  function getValues() {
+    return FIELDS.map(function (f) { return parseAmount($(f.id)); });
+  }
+  function setValues(vals) {
+    vals = padVals(vals);
+    FIELDS.forEach(function (f, i) {
+      var v = vals[i] || 0;
+      $(f.id).value = v ? fmt(v) : '';
+    });
+  }
+  function sideNet(vals, side) {
+    return FIELDS.reduce(function (sum, f, i) {
+      return f.side === side ? sum + f.sign * (vals[i] || 0) : sum;
+    }, 0);
+  }
+  function calc(vals) {
+    vals = padVals(vals);
+    return sideNet(vals, 'me') + sideNet(vals, 'hb');
+  }
+  function spent(vals) {
+    vals = padVals(vals);
+    return FIELDS.reduce(function (sum, f, i) {
+      return f.spend ? sum + (vals[i] || 0) : sum;
+    }, 0);
+  }
+
+  function render() {
+    var vals = getValues();
+    var mine = sideNet(vals, 'me');
+    var his = sideNet(vals, 'hb');
+    var total = mine + his;
+
+    var big = $('resultBig');
+    big.textContent = fmt(total) + '원';
+    big.classList.toggle('negative', total < 0);
+
+    var myPart = $('myPart');
+    myPart.textContent = fmt(mine) + '원';
+    myPart.classList.toggle('negative', mine < 0);
+
+    var hbPart = $('husbandPart');
+    hbPart.textContent = fmt(his) + '원';
+    hbPart.classList.toggle('negative', his < 0);
+  }
+
+  /* ----- 기록 (localStorage, 삭제는 tombstone으로 기록해 기기 간 동기화 시 되살아나지 않게 함) ----- */
+  function loadHistory() {
+    try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; }
+    catch (e) { return {}; }
+  }
+  function saveHistory(h) {
+    try { localStorage.setItem(LS_KEY, JSON.stringify(h)); } catch (e) {}
+  }
+  function entryTime(e) { return (e && (e.del || e.t)) || ''; }
+  function isLive(e) { return !!(e && e.v && !e.del); }
+  function liveMonths(h) {
+    return Object.keys(h).filter(function (m) { return isLive(h[m]); }).sort();
+  }
+
+  function renderHistory() {
+    var h = loadHistory();
+    var months = liveMonths(h).reverse();
+    var list = $('historyList');
+    list.innerHTML = '';
+    $('historyEmpty').style.display = months.length ? 'none' : 'block';
+
+    var cum = 0;
+    months.forEach(function (m) { cum += calc(h[m].v); });
+    $('cumulative').innerHTML = months.length
+      ? '누적 <strong>' + fmt(cum) + '원</strong>' : '';
+
+    months.forEach(function (m) {
+      var vals = padVals(h[m].v);
+      var total = calc(vals);
+      var item = document.createElement('div');
+      item.className = 'history-item';
+
+      var info = document.createElement('span');
+      info.className = 'hinfo';
+      var name = document.createElement('div');
+      name.className = 'hmonth';
+      name.textContent = monthLabel(m);
+      var sp = document.createElement('div');
+      sp.className = 'hspent';
+      sp.textContent = '쓴 돈 ' + fmt(spent(vals)) + '원';
+      info.appendChild(name);
+      info.appendChild(sp);
+
+      var amt = document.createElement('span');
+      amt.className = 'hamount' + (total < 0 ? ' neg' : '');
+      amt.textContent = fmt(total) + '원';
+
+      var btnLoad = document.createElement('button');
+      btnLoad.className = 'mini';
+      btnLoad.textContent = '불러오기';
+      btnLoad.addEventListener('click', function () {
+        $('month').value = m;
+        setValues(vals);
+        render();
+        toast(monthLabel(m) + ' 기록을 불러왔어요');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+
+      var btnDel = document.createElement('button');
+      btnDel.className = 'mini';
+      btnDel.textContent = '삭제';
+      btnDel.addEventListener('click', function () {
+        if (!confirm(monthLabel(m) + ' 기록을 삭제할까요?')) return;
+        var hh = loadHistory();
+        hh[m] = { del: new Date().toISOString() };
+        saveHistory(hh);
+        renderHistory();
+        drawChart();
+        syncNow(true);
+        toast('삭제했어요');
+      });
+
+      item.appendChild(info);
+      item.appendChild(amt);
+      item.appendChild(btnLoad);
+      item.appendChild(btnDel);
+      list.appendChild(item);
+    });
+  }
+
+  /* ----- 실시간 동기화 (Supabase: RPC로만 접근, 저장 시 상대 기기에 즉시 푸시) ----- */
+  var syncId = null;
+  try { syncId = localStorage.getItem(SYNC_LS_KEY) || null; } catch (e) {}
+  var syncBusy = false;
+  var rtChannel = null;
+  var rtReady = false;
+
+  function setChip(state, text) {
+    var chip = $('syncChip');
+    chip.className = 'sync-chip' + (state ? ' ' + state : '');
+    $('syncChipText').textContent = text;
+  }
+
+  function rpc(fn, args) {
+    return fetch(SUPABASE_URL + '/rest/v1/rpc/' + fn, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: SUPABASE_KEY,
+        Authorization: 'Bearer ' + SUPABASE_KEY
+      },
+      body: JSON.stringify(args)
+    }).then(function (r) {
+      if (!r.ok) throw new Error('rpc-failed');
+      return r.json();
+    });
+  }
+
+  // 서버가 월별 최신본만 남기고 병합한 결과를 돌려줌 → 그게 항상 정답
+  function syncNow(notify) {
+    if (!syncId) { setChip('', '동기화 꺼짐'); return; }
+    if (syncBusy) return;
+    syncBusy = true;
+    setChip('', '동기화 중…');
+    rpc('le_put_all', { code: syncId, doc: loadHistory() })
+      .then(function (cloud) {
+        cloud = cloud || {};
+        if (JSON.stringify(cloud) !== JSON.stringify(loadHistory())) {
+          saveHistory(cloud);
+          renderHistory();
+          drawChart();
+        }
+        var d = new Date();
+        setChip('on', (rtReady ? '실시간 · ' : '') + '동기화됨 ' +
+          String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'));
+        if (notify && rtChannel && rtReady) {
+          rtChannel.send({ type: 'broadcast', event: 'sync', payload: {} });
+        }
+      })
+      .catch(function () { setChip('err', '연결 안 됨'); })
+      .then(function () { syncBusy = false; });
+  }
+
+  function setupRealtime() {
+    if (!syncId || rtChannel || !window.supabase) return;
+    try {
+      var client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      rtChannel = client.channel('le-' + syncId);
+      rtChannel.on('broadcast', { event: 'sync' }, function () { syncNow(false); });
+      rtChannel.subscribe(function (status) {
+        rtReady = (status === 'SUBSCRIBED');
+      });
+    } catch (e) { rtChannel = null; }
+  }
+
+  setInterval(function () { syncNow(false); }, 60000);
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) syncNow(false);
+  });
+  window.addEventListener('online', function () { syncNow(false); });
+
+  /* ----- 월별 그래프 ----- */
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+  function el(tag, attrs) {
+    var node = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) node.setAttribute(k, attrs[k]);
+    return node;
+  }
+  function topRoundedRect(x, y, w, h, r) {
+    r = Math.min(r, w / 2, h);
+    return 'M' + x + ' ' + (y + h) +
+      ' V' + (y + r) +
+      ' Q' + x + ' ' + y + ' ' + (x + r) + ' ' + y +
+      ' H' + (x + w - r) +
+      ' Q' + (x + w) + ' ' + y + ' ' + (x + w) + ' ' + (y + r) +
+      ' V' + (y + h) + ' Z';
+  }
+  function tickLabel(n) {
+    if (n >= 100000000) return (n / 100000000) + '억';
+    if (n >= 10000) return (n / 10000) + '만';
+    return fmt(n);
+  }
+  function niceCeil(n) {
+    if (n <= 0) return 1;
+    var pow = Math.pow(10, Math.floor(Math.log10(n)));
+    var unit = n / pow;
+    var nice = unit <= 1 ? 1 : unit <= 2 ? 2 : unit <= 2.5 ? 2.5 : unit <= 5 ? 5 : 10;
+    return nice * pow;
+  }
+  function chartColors() {
+    var cs = getComputedStyle(document.body);
+    return {
+      collect: cs.getPropertyValue('--chart-collect').trim(),
+      spend: cs.getPropertyValue('--chart-spend').trim(),
+      grid: cs.getPropertyValue('--line').trim(),
+      text: cs.getPropertyValue('--muted').trim(),
+      surface: cs.getPropertyValue('--surface').trim()
+    };
+  }
+
+  function drawChart() {
+    var host = $('chartHost');
+    var h = loadHistory();
+    var all = liveMonths(h);
+    var truncated = all.length > 12;
+    var months = truncated ? all.slice(-12) : all;
+
+    host.innerHTML = '';
+    $('chartEmpty').style.display = months.length ? 'none' : 'block';
+    $('chartLegend').style.display = months.length ? 'flex' : 'none';
+    $('chartNote').textContent = truncated ? '최근 12개월만 표시돼요.' : '';
+    if (!months.length) return;
+
+    var data = months.map(function (m) {
+      var vals = padVals(h[m].v);
+      return { m: m, collect: Math.max(0, calc(vals)), realCollect: calc(vals), spend: spent(vals) };
+    });
+
+    var c = chartColors();
+    var W = Math.max(280, host.clientWidth || 480);
+    var H = 220;
+    var padL = 8, padR = 8, padT = 10, padB = 24;
+    var maxVal = niceCeil(Math.max.apply(null, data.map(function (d) {
+      return Math.max(d.collect, d.spend);
+    }).concat([1])));
+    var ticks = 4;
+
+    var svg = el('svg', { viewBox: '0 0 ' + W + ' ' + H, role: 'img',
+      'aria-label': '월별 모인 돈과 쓴 돈 막대 그래프' });
+
+    // 그리드 + y축 라벨 (라벨은 그리드선 위에 얹음)
+    var plotTop = padT + 12;
+    var plotH = H - plotTop - padB;
+    for (var t = 0; t <= ticks; t++) {
+      var val = maxVal * t / ticks;
+      var y = plotTop + plotH - plotH * t / ticks;
+      svg.appendChild(el('line', { x1: padL, x2: W - padR, y1: y, y2: y,
+        stroke: c.grid, 'stroke-width': 1 }));
+      if (t > 0) {
+        var lbl = el('text', { x: padL, y: y - 4, fill: c.text,
+          'font-size': 10, 'font-family': 'inherit' });
+        lbl.textContent = tickLabel(val);
+        svg.appendChild(lbl);
+      }
+    }
+
+    var n = data.length;
+    var slot = (W - padL - padR) / n;
+    var barGap = 2;
+    var barW = Math.min(24, Math.max(6, (slot * .62 - barGap) / 2));
+    var groupW = barW * 2 + barGap;
+    var multiYear = data.some(function (d) { return d.m.slice(0, 4) !== data[0].m.slice(0, 4); });
+
+    data.forEach(function (d, i) {
+      var cx = padL + slot * i + slot / 2;
+      var x0 = cx - groupW / 2;
+      var hCollect = maxVal ? plotH * d.collect / maxVal : 0;
+      var hSpend = maxVal ? plotH * d.spend / maxVal : 0;
+      var base = plotTop + plotH;
+
+      if (d.collect > 0) svg.appendChild(el('path', {
+        d: topRoundedRect(x0, base - hCollect, barW, hCollect, 4), fill: c.collect }));
+      if (d.spend > 0) svg.appendChild(el('path', {
+        d: topRoundedRect(x0 + barW + barGap, base - hSpend, barW, hSpend, 4), fill: c.spend }));
+
+      var xl = el('text', { x: cx, y: H - 8, fill: c.text, 'font-size': 10,
+        'text-anchor': 'middle', 'font-family': 'inherit' });
+      var p = d.m.split('-');
+      xl.textContent = multiYear ? (p[0].slice(2) + '.' + parseInt(p[1], 10)) : (parseInt(p[1], 10) + '월');
+      svg.appendChild(xl);
+
+      // 호버 영역 (막대보다 넓게)
+      var hit = el('rect', { x: padL + slot * i, y: plotTop, width: slot, height: plotH,
+        fill: 'transparent' });
+      hit.addEventListener('mouseenter', function (ev) { showTip(d, ev); });
+      hit.addEventListener('mousemove', function (ev) { showTip(d, ev); });
+      hit.addEventListener('mouseleave', hideTip);
+      hit.addEventListener('click', function (ev) { showTip(d, ev); ev.stopPropagation(); });
+      svg.appendChild(hit);
+    });
+
+    host.appendChild(svg);
+  }
+
+  function showTip(d, ev) {
+    var tip = $('chartTip');
+    var card = $('chartCard');
+    tip.innerHTML = '<div class="tt-month">' + monthLabel(d.m) + '</div>' +
+      '모인 돈 ' + fmt(d.realCollect) + '원<br>쓴 돈 ' + fmt(d.spend) + '원';
+    tip.style.display = 'block';
+    var rect = card.getBoundingClientRect();
+    var x = ev.clientX - rect.left + 12;
+    var y = ev.clientY - rect.top - 10;
+    if (x + tip.offsetWidth > rect.width - 8) x = x - tip.offsetWidth - 24;
+    tip.style.left = Math.max(4, x) + 'px';
+    tip.style.top = Math.max(4, y - tip.offsetHeight) + 'px';
+  }
+  function hideTip() { $('chartTip').style.display = 'none'; }
+  document.addEventListener('click', hideTip);
+
+  var resizeTimer;
+  window.addEventListener('resize', function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(drawChart, 150);
+  });
+  if (window.matchMedia) {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', drawChart);
+  }
+  new MutationObserver(drawChart).observe(document.documentElement, {
+    attributes: true, attributeFilter: ['data-theme']
+  });
+
+  /* ----- 토스트 ----- */
+  var toastTimer;
+  function toast(msg) {
+    var t = $('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.classList.remove('show'); }, 2200);
+  }
+
+  /* ----- 클립보드 ----- */
+  function copyText(text, doneMsg) {
+    function fallback() {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); toast(doneMsg); }
+      catch (e) { toast('복사에 실패했어요 😢'); }
+      document.body.removeChild(ta);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { toast(doneMsg); }, fallback);
+    } else { fallback(); }
+  }
+
+  /* ----- 공유 링크 ----- */
+  function buildShareUrl() {
+    if (syncId) {
+      return location.origin + location.pathname + location.search + '#s=' + syncId;
+    }
+    var payload = { m: $('month').value, v: getValues() };
+    return location.origin + location.pathname + location.search + '#d=' + btoa(JSON.stringify(payload));
+  }
+  function tryLoadFromHash() {
+    var sync = location.hash.match(/^#s=([A-Za-z0-9-]+)/);
+    if (sync) {
+      var isNew = syncId !== sync[1];
+      syncId = sync[1];
+      try { localStorage.setItem(SYNC_LS_KEY, syncId); } catch (e) {}
+      if (isNew) toast('실시간 동기화에 연결됐어요 🔗');
+      return true;
+    }
+    var match = location.hash.match(/^#d=(.+)$/);
+    if (!match) return false;
+    try {
+      var payload = JSON.parse(atob(match[1]));
+      if (payload.m) $('month').value = payload.m;
+      if (Array.isArray(payload.v)) setValues(payload.v);
+      $('sharedBanner').classList.add('show');
+      return true;
+    } catch (e) { return false; }
+  }
+
+  /* ----- 정산 요약 텍스트 ----- */
+  function summaryText() {
+    var vals = getValues();
+    var lines = ['📋 ' + monthLabel($('month').value) + ' 생활비 정산', '', '[내 정산]'];
+    FIELDS.forEach(function (f, i) {
+      if (f.side !== 'me') return;
+      var mark = f.sign > 0 ? (i === 0 ? '' : '+') : '−';
+      lines.push(f.label + ': ' + mark + fmt(vals[i]) + '원');
+    });
+    lines.push('→ 내가 주는 돈: ' + fmt(sideNet(vals, 'me')) + '원');
+    lines.push('');
+    lines.push('[남편 정산]');
+    FIELDS.forEach(function (f, i) {
+      if (f.side !== 'hb') return;
+      var mark = f.sign > 0 ? '' : '−';
+      lines.push(f.label + ': ' + mark + fmt(vals[i]) + '원');
+    });
+    lines.push('→ 남편 몫: ' + fmt(sideNet(vals, 'hb')) + '원');
+    lines.push('');
+    lines.push('👉 이번 달 모이는 돈: ' + fmt(calc(vals)) + '원');
+    return lines.join('\n');
+  }
+
+  /* ----- 이벤트 ----- */
+  FIELDS.forEach(function (f) {
+    var input = $(f.id);
+    input.addEventListener('input', function () {
+      var n = parseAmount(input);
+      input.value = n ? fmt(n) : '';
+      render();
+    });
+  });
+
+  $('btnSave').addEventListener('click', function () {
+    var m = $('month').value;
+    if (!m) { toast('정산 월을 먼저 선택해 주세요'); return; }
+    var h = loadHistory();
+    h[m] = { v: getValues(), t: new Date().toISOString() };
+    saveHistory(h);
+    renderHistory();
+    drawChart();
+    syncNow(true);
+    toast(monthLabel(m) + ' 기록을 저장했어요 ✅');
+  });
+
+  $('btnShare').addEventListener('click', function () {
+    copyText(buildShareUrl(),
+      syncId ? '실시간 공유 링크를 복사했어요. 카톡으로 남편에게 보내주세요 🔗'
+             : '공유 링크를 복사했어요. 카톡에 붙여넣기 하세요 🔗');
+  });
+
+  $('btnCopy').addEventListener('click', function () {
+    copyText(summaryText(), '정산 내용을 복사했어요 📋');
+  });
+
+  /* ----- 시작 ----- */
+  $('month').value = currentMonth();
+  tryLoadFromHash();
+  render();
+  renderHistory();
+  drawChart();
+  setupRealtime();
+  syncNow(false);
+</script>

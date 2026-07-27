@@ -1,4 +1,5 @@
 <title>생활비 정산</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤑</text></svg>">
 <style>
   :root {
     --bg: #F3F6FB;
@@ -470,6 +471,11 @@
       <span class="name">하나카드</span>
       <span class="amount-box"><input id="f_hana" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="하나카드"><span class="won">원</span></span>
     </div>
+    <div class="row">
+      <span class="sign minus" aria-hidden="true">−</span>
+      <span class="name">기타비용</span>
+      <span class="amount-box"><input id="f_etc_me" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="내 기타비용"><span class="won">원</span></span>
+    </div>
     <div class="group-label">다시 채우는 돈</div>
     <div class="row">
       <span class="sign plus" aria-hidden="true">+</span>
@@ -559,8 +565,13 @@
     { id: 'f_heejin',    label: '희진쓴돈',     sign: 1,  side: 'me' },
     { id: 'f_husband',   label: '남편월급',     sign: 1,  side: 'hb' },
     { id: 'f_starfield', label: '스타필드카드', sign: -1, side: 'hb', spend: true },
-    { id: 'f_etc',       label: '기타비용',     sign: -1, side: 'hb', spend: true }
+    { id: 'f_etc',       label: '기타비용',     sign: -1, side: 'hb', spend: true },
+    // 저장 데이터(v 배열)가 위치 기반이라 새 항목은 반드시 맨 뒤에 추가
+    { id: 'f_etc_me',    label: '기타비용',     sign: -1, side: 'me', spend: true }
   ];
+  // 요약 텍스트에 표시할 순서 (화면 배치와 동일하게)
+  var SUMMARY_ORDER = ['f_salary', 'f_loan', 'f_borrow', 'f_shinhan', 'f_coupang', 'f_hana',
+    'f_etc_me', 'f_heejin', 'f_husband', 'f_starfield', 'f_etc'];
   var LS_KEY = 'living-expenses-history-v1';
   var SYNC_LS_KEY = 'living-expenses-sync-id';
   var SUPABASE_URL = 'https://pbfgebrbvnemvragtoeh.supabase.co';
@@ -992,20 +1003,23 @@
   /* ----- 정산 요약 텍스트 ----- */
   function summaryText() {
     var vals = getValues();
+    function section(side) {
+      var out = [];
+      SUMMARY_ORDER.forEach(function (id) {
+        var i = FIELDS.findIndex(function (f) { return f.id === id; });
+        var f = FIELDS[i];
+        if (!f || f.side !== side) return;
+        var mark = f.sign > 0 ? (i === 0 ? '' : '+') : '−';
+        out.push(f.label + ': ' + mark + fmt(vals[i]) + '원');
+      });
+      return out;
+    }
     var lines = ['📋 ' + monthLabel($('month').value) + ' 생활비 정산', '', '[내 정산]'];
-    FIELDS.forEach(function (f, i) {
-      if (f.side !== 'me') return;
-      var mark = f.sign > 0 ? (i === 0 ? '' : '+') : '−';
-      lines.push(f.label + ': ' + mark + fmt(vals[i]) + '원');
-    });
+    lines = lines.concat(section('me'));
     lines.push('→ 내가 주는 돈: ' + fmt(sideNet(vals, 'me')) + '원');
     lines.push('');
     lines.push('[남편 정산]');
-    FIELDS.forEach(function (f, i) {
-      if (f.side !== 'hb') return;
-      var mark = f.sign > 0 ? '' : '−';
-      lines.push(f.label + ': ' + mark + fmt(vals[i]) + '원');
-    });
+    lines = lines.concat(section('hb'));
     lines.push('→ 남편 몫: ' + fmt(sideNet(vals, 'hb')) + '원');
     lines.push('');
     lines.push('👉 이번 달 모이는 돈: ' + fmt(calc(vals)) + '원');

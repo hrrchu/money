@@ -695,6 +695,7 @@
       btnLoad.addEventListener('click', function () {
         $('month').value = m;
         setValues(vals);
+        formDirty = false;
         render();
         toast(monthLabel(m) + ' 기록을 불러왔어요');
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -726,8 +727,21 @@
   var syncId = null;
   try { syncId = localStorage.getItem(SYNC_LS_KEY) || null; } catch (e) {}
   var syncBusy = false;
+  var syncPending = false;
   var rtChannel = null;
   var rtReady = false;
+  var formDirty = false; // 사용자가 입력 중이면 원격 갱신이 입력칸을 덮지 않음
+
+  // 입력칸이 깨끗할 때, 선택된 월의 저장 기록을 입력칸에 채움
+  function maybeFillForm() {
+    if (formDirty) return;
+    var h = loadHistory();
+    var m = $('month').value;
+    if (m && isLive(h[m])) {
+      setValues(h[m].v);
+      render();
+    }
+  }
 
   function setChip(state, text) {
     var chip = $('syncChip');
@@ -753,7 +767,7 @@
   // 서버가 월별 최신본만 남기고 병합한 결과를 돌려줌 → 그게 항상 정답
   function syncNow(notify) {
     if (!syncId) { setChip('', '동기화 꺼짐'); return; }
-    if (syncBusy) return;
+    if (syncBusy) { syncPending = true; return; }
     syncBusy = true;
     setChip('', '동기화 중…');
     rpc('le_put_all', { code: syncId, doc: loadHistory() })
@@ -763,6 +777,7 @@
           saveHistory(cloud);
           renderHistory();
           drawChart();
+          maybeFillForm();
         }
         var d = new Date();
         setChip('on', (rtReady ? '실시간 · ' : '') + '동기화됨 ' +
@@ -772,7 +787,10 @@
         }
       })
       .catch(function () { setChip('err', '연결 안 됨'); })
-      .then(function () { syncBusy = false; });
+      .then(function () {
+        syncBusy = false;
+        if (syncPending) { syncPending = false; syncNow(false); }
+      });
   }
 
   function setupRealtime() {
@@ -995,6 +1013,7 @@
       var payload = JSON.parse(atob(match[1]));
       if (payload.m) $('month').value = payload.m;
       if (Array.isArray(payload.v)) setValues(payload.v);
+      formDirty = true; // 공유받은 값이 저장 기록에 덮이지 않게
       $('sharedBanner').classList.add('show');
       return true;
     } catch (e) { return false; }
@@ -1030,10 +1049,16 @@
   FIELDS.forEach(function (f) {
     var input = $(f.id);
     input.addEventListener('input', function () {
+      formDirty = true;
       var n = parseAmount(input);
       input.value = n ? fmt(n) : '';
       render();
     });
+  });
+
+  $('month').addEventListener('change', function () {
+    formDirty = false;
+    maybeFillForm();
   });
 
   $('btnSave').addEventListener('click', function () {
@@ -1042,6 +1067,7 @@
     var h = loadHistory();
     h[m] = { v: getValues(), t: new Date().toISOString() };
     saveHistory(h);
+    formDirty = false;
     renderHistory();
     drawChart();
     syncNow(true);
@@ -1064,6 +1090,7 @@
   render();
   renderHistory();
   drawChart();
+  maybeFillForm();
   setupRealtime();
   syncNow(false);
 </script>

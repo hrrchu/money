@@ -77,6 +77,7 @@
   }
 
   * { box-sizing: border-box; }
+  html { font-size: 14px; } /* 전체 텍스트 축소 기준 (기본 16px) */
   body {
     margin: 0;
     background: var(--bg);
@@ -427,7 +428,7 @@
 
 <div class="wrap">
   <header>
-    <div class="eyebrow">우리집 정산</div>
+    <div class="eyebrow">이든이네</div>
     <h1>생활비 모으기 💰</h1>
     <div class="month-row">
       <label for="month">정산 월</label>
@@ -437,68 +438,6 @@
   </header>
 
   <div class="banner" id="sharedBanner">🔗 공유받은 정산 내역이에요. 아래에서 확인 후 <b>이번 달 저장</b>을 누르면 내 기록에도 남아요.</div>
-
-  <div class="card" id="inputCard">
-    <div class="group-label">내 수입</div>
-    <div class="row">
-      <span class="sign plus" aria-hidden="true">+</span>
-      <span class="name">월급</span>
-      <span class="amount-box"><input id="f_salary" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="월급"><span class="won">원</span></span>
-    </div>
-    <div class="group-label">빼는 돈</div>
-    <div class="row">
-      <span class="sign minus" aria-hidden="true">−</span>
-      <span class="name">대출이자</span>
-      <span class="amount-box"><input id="f_loan" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="대출이자"><span class="won">원</span></span>
-    </div>
-    <div class="row">
-      <span class="sign minus" aria-hidden="true">−</span>
-      <span class="name">차용이자</span>
-      <span class="amount-box"><input id="f_borrow" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="차용이자"><span class="won">원</span></span>
-    </div>
-    <div class="row">
-      <span class="sign minus" aria-hidden="true">−</span>
-      <span class="name">신한카드</span>
-      <span class="amount-box"><input id="f_shinhan" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="신한카드"><span class="won">원</span></span>
-    </div>
-    <div class="row">
-      <span class="sign minus" aria-hidden="true">−</span>
-      <span class="name">쿠팡카드</span>
-      <span class="amount-box"><input id="f_coupang" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="쿠팡카드"><span class="won">원</span></span>
-    </div>
-    <div class="row">
-      <span class="sign minus" aria-hidden="true">−</span>
-      <span class="name">하나카드</span>
-      <span class="amount-box"><input id="f_hana" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="하나카드"><span class="won">원</span></span>
-    </div>
-    <div class="row">
-      <span class="sign minus" aria-hidden="true">−</span>
-      <span class="name">기타비용</span>
-      <span class="amount-box"><input id="f_etc_me" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="내 기타비용"><span class="won">원</span></span>
-    </div>
-    <div class="group-label">다시 채우는 돈</div>
-    <div class="row">
-      <span class="sign plus" aria-hidden="true">+</span>
-      <span class="name">희진쓴돈</span>
-      <span class="amount-box"><input id="f_heejin" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="희진쓴돈"><span class="won">원</span></span>
-    </div>
-    <div class="group-label">남편 정산</div>
-    <div class="row">
-      <span class="sign plus" aria-hidden="true">+</span>
-      <span class="name">남편월급</span>
-      <span class="amount-box"><input id="f_husband" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="남편월급"><span class="won">원</span></span>
-    </div>
-    <div class="row">
-      <span class="sign minus" aria-hidden="true">−</span>
-      <span class="name">스타필드카드</span>
-      <span class="amount-box"><input id="f_starfield" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="스타필드카드"><span class="won">원</span></span>
-    </div>
-    <div class="row">
-      <span class="sign minus" aria-hidden="true">−</span>
-      <span class="name">기타비용</span>
-      <span class="amount-box"><input id="f_etc" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="기타비용"><span class="won">원</span></span>
-    </div>
-  </div>
 
   <div class="result">
     <div class="label">이번 달 모이는 돈</div>
@@ -513,12 +452,6 @@
         <div class="part-amount" id="husbandPart">0원</div>
       </div>
     </div>
-  </div>
-
-  <div class="actions">
-    <button class="primary" id="btnSave">이번 달 저장</button>
-    <button id="btnShare">공유 링크 복사</button>
-    <button id="btnCopy">정산 내용 복사</button>
   </div>
 
   <section class="block">
@@ -545,6 +478,79 @@
     <div class="card">
       <div class="history-list" id="historyList"></div>
       <div class="empty" id="historyEmpty">아직 저장된 기록이 없어요. 금액을 입력하고 <b>이번 달 저장</b>을 눌러 보세요.</div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="block-head">
+      <h2>정산 입력</h2>
+    </div>
+    <div class="card" id="inputCard">
+      <div class="group-label">내 수입</div>
+      <div class="row">
+        <span class="sign plus" aria-hidden="true">+</span>
+        <span class="name">월급</span>
+        <span class="amount-box"><input id="f_salary" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="월급"><span class="won">원</span></span>
+      </div>
+      <div class="group-label">빼는 돈</div>
+      <div class="row">
+        <span class="sign minus" aria-hidden="true">−</span>
+        <span class="name">대출이자</span>
+        <span class="amount-box"><input id="f_loan" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="대출이자"><span class="won">원</span></span>
+      </div>
+      <div class="row">
+        <span class="sign minus" aria-hidden="true">−</span>
+        <span class="name">차용이자</span>
+        <span class="amount-box"><input id="f_borrow" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="차용이자"><span class="won">원</span></span>
+      </div>
+      <div class="row">
+        <span class="sign minus" aria-hidden="true">−</span>
+        <span class="name">신한카드</span>
+        <span class="amount-box"><input id="f_shinhan" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="신한카드"><span class="won">원</span></span>
+      </div>
+      <div class="row">
+        <span class="sign minus" aria-hidden="true">−</span>
+        <span class="name">쿠팡카드</span>
+        <span class="amount-box"><input id="f_coupang" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="쿠팡카드"><span class="won">원</span></span>
+      </div>
+      <div class="row">
+        <span class="sign minus" aria-hidden="true">−</span>
+        <span class="name">하나카드</span>
+        <span class="amount-box"><input id="f_hana" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="하나카드"><span class="won">원</span></span>
+      </div>
+      <div class="row">
+        <span class="sign minus" aria-hidden="true">−</span>
+        <span class="name">기타비용</span>
+        <span class="amount-box"><input id="f_etc_me" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="내 기타비용"><span class="won">원</span></span>
+      </div>
+      <div class="group-label">다시 채우는 돈</div>
+      <div class="row">
+        <span class="sign plus" aria-hidden="true">+</span>
+        <span class="name">희진쓴돈</span>
+        <span class="amount-box"><input id="f_heejin" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="희진쓴돈"><span class="won">원</span></span>
+      </div>
+      <div class="group-label">남편 정산</div>
+      <div class="row">
+        <span class="sign plus" aria-hidden="true">+</span>
+        <span class="name">남편월급</span>
+        <span class="amount-box"><input id="f_husband" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="남편월급"><span class="won">원</span></span>
+      </div>
+      <div class="row">
+        <span class="sign minus" aria-hidden="true">−</span>
+        <span class="name">스타필드카드</span>
+        <span class="amount-box"><input id="f_starfield" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="스타필드카드"><span class="won">원</span></span>
+      </div>
+      <div class="row">
+        <span class="sign minus" aria-hidden="true">−</span>
+        <span class="name">기타비용</span>
+        <span class="amount-box"><input id="f_etc" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="기타비용"><span class="won">원</span></span>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="primary" id="btnSave">이번 달 저장</button>
+      <button id="btnShare">공유 링크 복사</button>
+      <button id="btnCopy">정산 내용 복사</button>
     </div>
   </section>
 

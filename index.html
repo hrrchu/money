@@ -516,7 +516,7 @@
       <h2>정산 입력</h2>
       <button class="ocr-btn" id="btnOcr">📷 캡쳐로 입력</button>
     </div>
-    <input type="file" id="ocrFile" accept="image/*" style="display:none">
+    <input type="file" id="ocrFile" accept="image/*" multiple style="display:none">
     <div class="card ocr-panel" id="ocrPanel" style="display:none">
       <div class="ocr-status" id="ocrStatus"></div>
       <div class="ocr-row" id="ocrResult" style="display:none">
@@ -1212,6 +1212,11 @@
     $('ocrPanel').style.display = 'block';
     $('ocrStatus').textContent = msg;
   }
+  var ocrFiles = [], ocrIndex = 0;
+  function ocrLabel() {
+    return ocrFiles.length > 1 ? '(' + (ocrIndex + 1) + '/' + ocrFiles.length + '장) ' : '';
+  }
+
   function ocrShowResult(parsed) {
     var sel = $('ocrField');
     sel.innerHTML = '';
@@ -1223,31 +1228,50 @@
     });
     sel.value = parsed.field || 'f_shinhan';
     $('ocrAmount').value = parsed.amount ? fmt(parsed.amount) : '';
+    $('ocrCancel').textContent = ocrFiles.length > 1 ? '건너뛰기' : '취소';
     $('ocrResult').style.display = 'flex';
-    ocrStatus(parsed.amount
+    ocrStatus(ocrLabel() + (parsed.amount
       ? '인식 결과를 확인하고 적용을 눌러주세요. 금액이 틀리면 고쳐도 돼요.'
-      : '금액을 못 찾았어요 😢 항목을 고르고 금액을 직접 입력해 주세요.');
+      : '금액을 못 찾았어요 😢 항목을 고르고 금액을 직접 입력해 주세요.'));
   }
 
-  $('btnOcr').addEventListener('click', function () { $('ocrFile').click(); });
-  $('ocrFile').addEventListener('change', function () {
-    var file = this.files && this.files[0];
-    this.value = '';
-    if (!file) return;
+  // 여러 장을 고르면 한 장씩 차례로 인식 → 확인 → 다음 장
+  function ocrProcessCurrent() {
+    if (ocrIndex >= ocrFiles.length) {
+      $('ocrPanel').style.display = 'none';
+      if (ocrFiles.length > 1) toast('캡쳐 ' + ocrFiles.length + '장 처리 끝! 확인 후 저장하세요');
+      ocrFiles = []; ocrIndex = 0;
+      return;
+    }
+    var file = ocrFiles[ocrIndex];
     $('ocrResult').style.display = 'none';
-    ocrStatus('인식 엔진 불러오는 중… (처음 한 번만 오래 걸려요)');
+    ocrStatus(ocrLabel() + '인식 엔진 불러오는 중… (처음 한 번만 오래 걸려요)');
     loadTesseract()
       .then(function () {
         return window.Tesseract.recognize(file, 'kor', {
           logger: function (m) {
             if (m.status === 'recognizing text') {
-              ocrStatus('명세 인식 중… ' + Math.round((m.progress || 0) * 100) + '%');
+              ocrStatus(ocrLabel() + '명세 인식 중… ' + Math.round((m.progress || 0) * 100) + '%');
             }
           }
         });
       })
       .then(function (r) { ocrShowResult(extractBill(r.data.text || '')); })
-      .catch(function () { ocrStatus('인식에 실패했어요 😢 다시 시도하거나 직접 입력해 주세요.'); });
+      .catch(function () {
+        $('ocrCancel').textContent = ocrFiles.length > 1 ? '건너뛰기' : '취소';
+        $('ocrResult').style.display = 'flex';
+        ocrStatus(ocrLabel() + '인식에 실패했어요 😢 직접 입력하거나 건너뛰세요.');
+      });
+  }
+
+  $('btnOcr').addEventListener('click', function () { $('ocrFile').click(); });
+  $('ocrFile').addEventListener('change', function () {
+    var files = Array.prototype.slice.call(this.files || []);
+    this.value = '';
+    if (!files.length) return;
+    ocrFiles = files;
+    ocrIndex = 0;
+    ocrProcessCurrent();
   });
   $('ocrAmount').addEventListener('input', function () {
     var n = parseAmount(this);
@@ -1260,12 +1284,14 @@
     $(target).value = n ? fmt(n) : '';
     formDirty = true;
     render();
-    $('ocrPanel').style.display = 'none';
     var f = FIELDS.filter(function (x) { return x.id === target; })[0];
-    toast((f ? f.label : '항목') + '에 ' + fmt(n) + '원을 넣었어요. 확인 후 저장하세요!');
+    toast((f ? f.label : '항목') + '에 ' + fmt(n) + '원을 넣었어요');
+    ocrIndex++;
+    ocrProcessCurrent();
   });
   $('ocrCancel').addEventListener('click', function () {
-    $('ocrPanel').style.display = 'none';
+    ocrIndex++;
+    ocrProcessCurrent();
   });
 
   /* ----- 시작 ----- */

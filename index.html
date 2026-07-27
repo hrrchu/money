@@ -492,6 +492,11 @@
         <span class="name">월급</span>
         <span class="amount-box"><input id="f_salary" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="월급"><span class="won">원</span></span>
       </div>
+      <div class="row">
+        <span class="sign plus" aria-hidden="true">+</span>
+        <span class="name">희진쓴돈</span>
+        <span class="amount-box"><input id="f_heejin" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="희진쓴돈"><span class="won">원</span></span>
+      </div>
       <div class="group-label">빼는 돈</div>
       <div class="row">
         <span class="sign minus" aria-hidden="true">−</span>
@@ -527,12 +532,6 @@
         <span class="sign minus" aria-hidden="true">−</span>
         <span class="name">기타비용</span>
         <span class="amount-box"><input id="f_etc_me" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="내 기타비용"><span class="won">원</span></span>
-      </div>
-      <div class="group-label">다시 채우는 돈</div>
-      <div class="row">
-        <span class="sign plus" aria-hidden="true">+</span>
-        <span class="name">희진쓴돈</span>
-        <span class="amount-box"><input id="f_heejin" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="희진쓴돈"><span class="won">원</span></span>
       </div>
       <div class="group-label">요한 정산</div>
       <div class="row">
@@ -588,8 +587,8 @@
     { id: 'f_pocket_hb', label: '용돈',         sign: -1, side: 'hb', spend: true }
   ];
   // 요약 텍스트에 표시할 순서 (화면 배치와 동일하게)
-  var SUMMARY_ORDER = ['f_salary', 'f_loan', 'f_borrow', 'f_shinhan', 'f_coupang', 'f_hana',
-    'f_pocket_me', 'f_etc_me', 'f_heejin', 'f_husband', 'f_starfield', 'f_pocket_hb', 'f_etc'];
+  var SUMMARY_ORDER = ['f_salary', 'f_heejin', 'f_loan', 'f_borrow', 'f_shinhan', 'f_coupang',
+    'f_hana', 'f_pocket_me', 'f_etc_me', 'f_husband', 'f_starfield', 'f_pocket_hb', 'f_etc'];
   var LS_KEY = 'living-expenses-history-v1';
   var SYNC_LS_KEY = 'living-expenses-sync-id';
   var SUPABASE_URL = 'https://pbfgebrbvnemvragtoeh.supabase.co';

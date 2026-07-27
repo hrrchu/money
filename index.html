@@ -404,6 +404,36 @@
     color: var(--muted);
   }
 
+  .ocr-btn {
+    font-size: .78rem;
+    padding: .35rem .7rem;
+    border-radius: .5rem;
+  }
+  .ocr-panel { padding: .75rem .9rem; margin-bottom: .6rem; }
+  .ocr-status { font-size: .82rem; color: var(--muted); }
+  .ocr-row {
+    display: flex;
+    gap: .4rem;
+    margin-top: .55rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .ocr-row select, .ocr-row input {
+    border: 1px solid var(--line);
+    background: var(--bg);
+    color: var(--ink);
+    border-radius: .5rem;
+    padding: .45rem .5rem;
+    font: inherit;
+    font-weight: 700;
+  }
+  .ocr-row input {
+    width: 8rem;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .ocr-row .mini { padding: .45rem .7rem; font-size: .82rem; border-radius: .5rem; }
+
   #toast {
     position: fixed;
     left: 50%;
@@ -484,6 +514,18 @@
   <section class="block">
     <div class="block-head">
       <h2>정산 입력</h2>
+      <button class="ocr-btn" id="btnOcr">📷 캡쳐로 입력</button>
+    </div>
+    <input type="file" id="ocrFile" accept="image/*" style="display:none">
+    <div class="card ocr-panel" id="ocrPanel" style="display:none">
+      <div class="ocr-status" id="ocrStatus"></div>
+      <div class="ocr-row" id="ocrResult" style="display:none">
+        <select id="ocrField" aria-label="적용할 항목"></select>
+        <input id="ocrAmount" inputmode="numeric" aria-label="인식된 금액" placeholder="0">
+        <span class="won">원</span>
+        <button class="mini primary" id="ocrApply">적용</button>
+        <button class="mini" id="ocrCancel">취소</button>
+      </div>
     </div>
     <div class="card" id="inputCard">
       <div class="group-label">희진 정산</div>
@@ -1118,6 +1160,112 @@
 
   $('btnCopy').addEventListener('click', function () {
     copyText(summaryText(), '정산 내용을 복사했어요 📋');
+  });
+
+  /* ----- 카드 명세 캡쳐 OCR (Tesseract.js, 필요할 때만 로드) ----- */
+  var tesseractLoading = null;
+  function loadTesseract() {
+    if (window.Tesseract) return Promise.resolve();
+    if (!tesseractLoading) {
+      tesseractLoading = new Promise(function (resolve, reject) {
+        var s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+        s.onload = resolve;
+        s.onerror = function () { tesseractLoading = null; reject(new Error('load-failed')); };
+        document.head.appendChild(s);
+      });
+    }
+    return tesseractLoading;
+  }
+
+  // OCR 텍스트에서 청구금액 후보와 카드 종류를 추출
+  function extractBill(text) {
+    var lines = text.split(/\n+/);
+    function amountsIn(s) {
+      var out = [], m, re = /\d{1,3}(?:[,.]\d{3})+|\d{4,9}/g;
+      while ((m = re.exec(s))) {
+        var n = parseInt(m[0].replace(/[,.]/g, ''), 10);
+        if (n >= 1000 && n < 100000000) out.push(n);
+      }
+      return out;
+    }
+    var kw = /청구|결제\s*예정|결제\s*금액|총\s*이용|이용\s*금액|합계|총액/;
+    var kwAmts = [], allAmts = [];
+    lines.forEach(function (ln, i) {
+      var a = amountsIn(ln);
+      allAmts = allAmts.concat(a);
+      if (kw.test(ln)) {
+        kwAmts = kwAmts.concat(a.length ? a : amountsIn(lines[i + 1] || ''));
+      }
+    });
+    var amount = kwAmts.length ? Math.max.apply(null, kwAmts)
+      : (allAmts.length ? Math.max.apply(null, allAmts) : 0);
+    var field = '';
+    if (/신한/.test(text)) field = 'f_shinhan';
+    else if (/쿠팡/.test(text)) field = 'f_coupang';
+    else if (/하나카드|하나은행|하나머니|하나페이/.test(text)) field = 'f_hana';
+    else if (/스타필드/.test(text)) field = 'f_starfield';
+    return { amount: amount, field: field };
+  }
+
+  function ocrStatus(msg) {
+    $('ocrPanel').style.display = 'block';
+    $('ocrStatus').textContent = msg;
+  }
+  function ocrShowResult(parsed) {
+    var sel = $('ocrField');
+    sel.innerHTML = '';
+    FIELDS.forEach(function (f) {
+      var opt = document.createElement('option');
+      opt.value = f.id;
+      opt.textContent = f.label + (f.side === 'hb' ? ' (요한)' : ' (희진)');
+      sel.appendChild(opt);
+    });
+    sel.value = parsed.field || 'f_shinhan';
+    $('ocrAmount').value = parsed.amount ? fmt(parsed.amount) : '';
+    $('ocrResult').style.display = 'flex';
+    ocrStatus(parsed.amount
+      ? '인식 결과를 확인하고 적용을 눌러주세요. 금액이 틀리면 고쳐도 돼요.'
+      : '금액을 못 찾았어요 😢 항목을 고르고 금액을 직접 입력해 주세요.');
+  }
+
+  $('btnOcr').addEventListener('click', function () { $('ocrFile').click(); });
+  $('ocrFile').addEventListener('change', function () {
+    var file = this.files && this.files[0];
+    this.value = '';
+    if (!file) return;
+    $('ocrResult').style.display = 'none';
+    ocrStatus('인식 엔진 불러오는 중… (처음 한 번만 오래 걸려요)');
+    loadTesseract()
+      .then(function () {
+        return window.Tesseract.recognize(file, 'kor', {
+          logger: function (m) {
+            if (m.status === 'recognizing text') {
+              ocrStatus('명세 인식 중… ' + Math.round((m.progress || 0) * 100) + '%');
+            }
+          }
+        });
+      })
+      .then(function (r) { ocrShowResult(extractBill(r.data.text || '')); })
+      .catch(function () { ocrStatus('인식에 실패했어요 😢 다시 시도하거나 직접 입력해 주세요.'); });
+  });
+  $('ocrAmount').addEventListener('input', function () {
+    var n = parseAmount(this);
+    this.value = n ? fmt(n) : '';
+  });
+  $('ocrApply').addEventListener('click', function () {
+    var target = $('ocrField').value;
+    var n = parseAmount($('ocrAmount'));
+    if (!target || !$(target)) return;
+    $(target).value = n ? fmt(n) : '';
+    formDirty = true;
+    render();
+    $('ocrPanel').style.display = 'none';
+    var f = FIELDS.filter(function (x) { return x.id === target; })[0];
+    toast((f ? f.label : '항목') + '에 ' + fmt(n) + '원을 넣었어요. 확인 후 저장하세요!');
+  });
+  $('ocrCancel').addEventListener('click', function () {
+    $('ocrPanel').style.display = 'none';
   });
 
   /* ----- 시작 ----- */
